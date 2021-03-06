@@ -107,6 +107,23 @@ def sBoxSub(w3):
         sBoxValue = Sbox[leftNibble*16+rightNibble]
         g.append(sBoxValue)
     return g
+
+def invSboxSub(w3):
+    n = len(w3)
+    g = [] 
+    for i in range(n):
+        val = w3[i]
+        # print(val,bin(val))
+        rightNibble = (val & 15) #0000 1111 = 15
+        # print(val,bin(val))
+        leftNibble = (val & 240) >> 4 #1111 0000 = 240 
+        # print(val,bin(val))
+        # print(leftNibble,bin(leftNibble),rightNibble,bin(rightNibble))
+        # print(hex(val))
+        # print(hex(leftNibble),hex(rightNibble))
+        invSboxValue = InvSbox[leftNibble*16+rightNibble]
+        g.append(invSboxValue)
+    return g
 def hexPrint(list):
     returnStr = ""
     for item in list:
@@ -294,3 +311,73 @@ for round in range(10):
 print('after encryption')
 matrixHexPrint(stateMatrix)
        
+addRoundKey(stateMatrix,roundKeys[-1])
+
+
+for round in range(10):#range(10,0,-1):
+    
+        # print(hexPrint(stateMatrix[i]))
+
+    
+        # print(hexPrint(stateMatrix[i]))
+    # matrixHexPrint(stateMatrix)   
+    # for row in stateMatrix:
+    #     print(hexPrint(row))
+    print('before inverse row shift')
+    matrixHexPrint(stateMatrix)
+    for i in range(n):
+        w = stateMatrix[i]
+        # print(i)
+        # print(hexPrint(stateMatrix[i]))
+        for k in range(i):
+            
+            t = w[n-1]
+            for j in range(n-1,-1,-1):
+                w[j] = w[((j-1))]
+            w[0] = t
+    print('after inverse shift row')
+    matrixHexPrint(stateMatrix)
+    for i in range(n):
+        stateMatrix[i] = invSboxSub(stateMatrix[i])
+    print('after invsbox')
+    matrixHexPrint(stateMatrix)
+
+    addRoundKey(stateMatrix,roundKeys[-2-round])
+
+    print('after add round key')
+    matrixHexPrint(stateMatrix)
+
+    if round+1 != 10:
+        newMatrix = []
+        for row in range(n):
+            t = []
+            for col in range(n):
+                sum = 0
+                for i in range(n):
+                    bv1 = InvMixer[row][i]
+                    num2 = stateMatrix[i][col]
+                    # print(type(num1))
+                    # print(type(num2))
+                    str2 = hex(num2)
+                    str2Prime = ""
+                    for j in range(len(str2)-2):
+                        str2Prime += str2[j+2]
+                    AES_modulus = BitVector(bitstring='100011011')
+                    bv2 = BitVector(hexstring=str2Prime)
+                    bv3 = bv1.gf_multiply_modular(bv2, AES_modulus, 8)
+                    sum = sum ^ bv3.int_val()
+                    # print(row,col,hex(bv1.int_val()),hex(bv2.int_val()),hex(bv3.int_val()))
+                # print(row,col,hex(sum))
+                t.append(sum)
+            newMatrix.append(t)
+        # print('hey')
+        # print(matrixHexPrint(newMatrix))
+        stateMatrix = newMatrix
+    print('after invmix columns round',round+1)
+    matrixHexPrint(stateMatrix)
+
+    
+    # print('after roundkey round',round+1)
+    # matrixHexPrint(stateMatrix)
+
+
