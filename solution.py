@@ -1,6 +1,5 @@
 from BitVector import *
-# inputString = input("Please insert encryption key(128bit 16byte):")
-# print(inputString)
+
 Sbox = (
     0x63, 0x7C, 0x77, 0x7B, 0xF2, 0x6B, 0x6F, 0xC5, 0x30, 0x01, 0x67, 0x2B, 0xFE, 0xD7, 0xAB, 0x76,
     0xCA, 0x82, 0xC9, 0x7D, 0xFA, 0x59, 0x47, 0xF0, 0xAD, 0xD4, 0xA2, 0xAF, 0x9C, 0xA4, 0x72, 0xC0,
@@ -53,43 +52,50 @@ InvMixer = [
     [BitVector(hexstring="0B"), BitVector(hexstring="0D"), BitVector(hexstring="09"), BitVector(hexstring="0E")]
 ]
 
-inputString = "Thats my Kung Fu"
-plainText = "Two One Nine Two"
-
-if(len(inputString)<16):
-    i = len(inputString)
-    while(i!=16):
-        inputString = inputString + " "
-        i += 1
-elif(len(inputString)>16):
-    newString = ""
-    i = 0
-    while(i!=16):
-        newString += inputString[i]
-        i += 1
-    inputString = newString
-
-n = 4
-keyMatrix = []
-for i in range(n):
-    t = []
-    for j in range(n):
-        t.append(0)
-    keyMatrix.append(t) 
-# print(keyMatrix)
+def stringToAsciiMatrix16CharRowMajor(inputString):
+    n = 4
+    keyMatrix = []
+    for i in range(n):
+        t = []
+        for j in range(n):
+            t.append(0)
+        keyMatrix.append(t) 
+    # print(keyMatrix)
 
 
-stringIndex = 0
-for i in range(n):
-    for j in range(n):
-        # print(i,j)
-        
-        # print(stringIndex)
-        # print(ord(inputString[stringIndex]))
-        keyMatrix[i][j] = ord(inputString[stringIndex])
-        # print(keyMatrix)
-        stringIndex += 1
-# print(keyMatrix)
+    stringIndex = 0
+    for i in range(n):
+        for j in range(n):
+            # print(i,j)
+            
+            # print(stringIndex)
+            # print(ord(inputString[stringIndex]))
+            keyMatrix[i][j] = ord(inputString[stringIndex])
+            # print(keyMatrix)
+            stringIndex += 1
+    # print(keyMatrix)
+    return keyMatrix
+
+def stringToAsciiMatrix16CharColumnMajor(plainText):
+    n = 4
+    stateMatrix = []
+    for i in range(n):
+        t = []
+        for j in range(n):
+            t.append(0)
+        stateMatrix.append(t) 
+
+    stringIndex = 0
+    for i in range(n):
+        for j in range(n):
+            # print(i,j)
+            
+            # print(stringIndex)
+            # print(ord(inputString[stringIndex]))
+            stateMatrix[j][i] = ord(plainText[stringIndex])
+            # print(keyMatrix)
+            stringIndex += 1
+    return stateMatrix
 
 def sBoxSub(w3):
     n = len(w3)
@@ -124,11 +130,13 @@ def invSboxSub(w3):
         invSboxValue = InvSbox[leftNibble*16+rightNibble]
         g.append(invSboxValue)
     return g
+
 def hexPrint(list):
     returnStr = ""
     for item in list:
         returnStr = returnStr + str(hex(item))+", "
     return returnStr
+
 def doubleRoundConstant(roundConstant):
     AES_modulus = BitVector(bitstring='100011011')
     bv1 = BitVector(hexstring="02")
@@ -142,6 +150,7 @@ def doubleRoundConstant(roundConstant):
     bv3 = bv1.gf_multiply_modular(bv2, AES_modulus, 8)
     #print(bv3)
     roundConstant[0] = bv3.int_val()
+
 def reverseMatrix(matrix):
     n = len(matrix)
     returnMatrix = []
@@ -154,89 +163,72 @@ def reverseMatrix(matrix):
         for j in range(len(matrix[0])):
             returnMatrix[i][j] = matrix[j][i]
     return returnMatrix
+
 def matrixHexPrint(matrix):
     for item in matrix:
         print(hexPrint(item))
-roundKeys = []
-# print('hello')
-for item in keyMatrix:
-    roundKeys.append(item)
-    # print(hexPrint(item))
-# print('hello')
 
-# print(type(hex(3)))
-roundConstant = [1,0,0,0]
+def roundKeyGeneration(keyMatrix):
+    n=len(keyMatrix)
+    roundKeys = []
+    # print('hello')
+    for item in keyMatrix:
+        roundKeys.append(item)
+        # print(hexPrint(item))
+    # print('hello')
 
-for round in range(10):
-    w3 = roundKeys[-1].copy()
-    t = w3[0]
-    for i in range(n):
-        w3[i] = w3[((i+1)%n)]
-    w3[n-1] = t
-    #print(hexPrint(w3))
-    g = sBoxSub(w3)    
-    for i in range(len(g)):
-        g[i] = roundConstant[i] ^ g[i]
-        # print(hex(g[i]))
-    doubleRoundConstant(roundConstant)
-    #print(hexPrint(roundConstant))
-    w4 = []
-    for i in range(n):
-        w4.append(roundKeys[-4][i]^ g[i])
-        # print(hex(w4[i]))
-    #print(hexPrint(w4))
-    roundKeys.append(w4)
-    for i in range(n-1):
-        w = []
-        for j in range(n):
-            w.append(roundKeys[-1][j] ^ roundKeys[-4][j])
-        roundKeys.append(w)
-# print('hi')
-# for item in roundKeys:
-#     print(hexPrint(item))
-# print('hi')
+    # print(type(hex(3)))
+    roundConstant = [1,0,0,0]
 
-roundKeys3D = []
-for round in range(int(len(roundKeys)/4)):
-    t = []
-    for i in range(n):
-        t.append(roundKeys[round*4+i].copy())
-    # print(round)
-    # print(t)
-    t =reverseMatrix(t)
-    # print(t)
-    roundKeys3D.append(t)
-# print('hello')
-# for item in roundKeys3D:
-#     for row in item:
-#         print(hexPrint(row))
-# print('hello')
-roundKeys = roundKeys3D
+    for round in range(10):
+        w3 = roundKeys[-1].copy()
+        t = w3[0]
+        for i in range(n):
+            w3[i] = w3[((i+1)%n)]
+        w3[n-1] = t
+        #print(hexPrint(w3))
+        g = sBoxSub(w3)    
+        for i in range(len(g)):
+            g[i] = roundConstant[i] ^ g[i]
+            # print(hex(g[i]))
+        doubleRoundConstant(roundConstant)
+        #print(hexPrint(roundConstant))
+        w4 = []
+        for i in range(n):
+            w4.append(roundKeys[-4][i]^ g[i])
+            # print(hex(w4[i]))
+        #print(hexPrint(w4))
+        roundKeys.append(w4)
+        for i in range(n-1):
+            w = []
+            for j in range(n):
+                w.append(roundKeys[-1][j] ^ roundKeys[-4][j])
+            roundKeys.append(w)
+    # print('hi')
+    # for item in roundKeys:
+    #     print(hexPrint(item))
+    # print('hi')
 
-
-n = 4
-stateMatrix = []
-for i in range(n):
-    t = []
-    for j in range(n):
-        t.append(0)
-    stateMatrix.append(t) 
-
-stringIndex = 0
-for i in range(n):
-    for j in range(n):
-        # print(i,j)
-        
-        # print(stringIndex)
-        # print(ord(inputString[stringIndex]))
-        stateMatrix[j][i] = ord(plainText[stringIndex])
-        # print(keyMatrix)
-        stringIndex += 1
-# for item in stateMatrix:
-#     print(hexPrint(item))
-# print(len(roundKeys))
+    roundKeys3D = []
+    for round in range(int(len(roundKeys)/4)):
+        t = []
+        for i in range(n):
+            t.append(roundKeys[round*4+i].copy())
+        # print(round)
+        # print(t)
+        t =reverseMatrix(t)
+        # print(t)
+        roundKeys3D.append(t)
+    # print('hello')
+    # for item in roundKeys3D:
+    #     for row in item:
+    #         print(hexPrint(row))
+    # print('hello')
+    roundKeys = roundKeys3D
+    return roundKeys
 
 def addRoundKey(stateMatrix,keyMatrix):
+    n=len(stateMatrix)
     for i in range(n):
         
         # print(i)
@@ -245,139 +237,202 @@ def addRoundKey(stateMatrix,keyMatrix):
         for j in range(n):
             stateMatrix[i][j] = stateMatrix[i][j] ^ keyMatrix[i][j]
 
-
-addRoundKey(stateMatrix,roundKeys[0])
-# matrixHexPrint(stateMatrix)
-
-# print('hey')
-for round in range(10):
+def encryption16Char(stateMatrix,roundKeys):
     
-        # print(hexPrint(stateMatrix[i]))
-
-    for i in range(n):
-        stateMatrix[i] = sBoxSub(stateMatrix[i])
-        # print(hexPrint(stateMatrix[i]))
-    # matrixHexPrint(stateMatrix)   
-    # for row in stateMatrix:
-    #     print(hexPrint(row))
-
-    for i in range(n):
-        w = stateMatrix[i]
-        # print(i)
-        # print(hexPrint(stateMatrix[i]))
-        for k in range(i):
-            
-            t = w[0]
-            for j in range(n):
-                w[j] = w[((j+1)%n)]
-            w[n-1] = t
 
 
-    # stateMatrix = reverseMatrix(stateMatrix)
-    # matrixHexPrint(stateMatrix)
-    if round+1 != 10:
-        newMatrix = []
-        for row in range(n):
-            t = []
-            for col in range(n):
-                sum = 0
-                for i in range(n):
-                    bv1 = Mixer[row][i]
-                    num2 = stateMatrix[i][col]
-                    # print(type(num1))
-                    # print(type(num2))
-                    str2 = hex(num2)
-                    str2Prime = ""
-                    for j in range(len(str2)-2):
-                        str2Prime += str2[j+2]
-                    AES_modulus = BitVector(bitstring='100011011')
-                    bv2 = BitVector(hexstring=str2Prime)
-                    bv3 = bv1.gf_multiply_modular(bv2, AES_modulus, 8)
-                    sum = sum ^ bv3.int_val()
-                    # print(row,col,hex(bv1.int_val()),hex(bv2.int_val()),hex(bv3.int_val()))
-                # print(row,col,hex(sum))
-                t.append(sum)
-            newMatrix.append(t)
-        # print('hey')
-        # print(matrixHexPrint(newMatrix))
-        stateMatrix = newMatrix
-    # print('after mix columns round',round+1)
+
+    n=len(stateMatrix)
+    addRoundKey(stateMatrix,roundKeys[0])
     # matrixHexPrint(stateMatrix)
 
-    addRoundKey(stateMatrix,roundKeys[round+1])
-    # print('after roundkey round',round+1)
-    # matrixHexPrint(stateMatrix)
+    # print('hey')
+    for round in range(10):
+        
+            # print(hexPrint(stateMatrix[i]))
 
-print('after encryption')
-matrixHexPrint(stateMatrix)
-       
-addRoundKey(stateMatrix,roundKeys[-1])
+        for i in range(n):
+            stateMatrix[i] = sBoxSub(stateMatrix[i])
+            # print(hexPrint(stateMatrix[i]))
+        # matrixHexPrint(stateMatrix)   
+        # for row in stateMatrix:
+        #     print(hexPrint(row))
+
+        for i in range(n):
+            w = stateMatrix[i]
+            # print(i)
+            # print(hexPrint(stateMatrix[i]))
+            for k in range(i):
+                
+                t = w[0]
+                for j in range(n):
+                    w[j] = w[((j+1)%n)]
+                w[n-1] = t
 
 
-for round in range(10):#range(10,0,-1):
+        # stateMatrix = reverseMatrix(stateMatrix)
+        # matrixHexPrint(stateMatrix)
+        if round+1 != 10:
+            newMatrix = []
+            for row in range(n):
+                t = []
+                for col in range(n):
+                    sum = 0
+                    for i in range(n):
+                        bv1 = Mixer[row][i]
+                        num2 = stateMatrix[i][col]
+                        # print(type(num1))
+                        # print(type(num2))
+                        str2 = hex(num2)
+                        str2Prime = ""
+                        for j in range(len(str2)-2):
+                            str2Prime += str2[j+2]
+                        AES_modulus = BitVector(bitstring='100011011')
+                        bv2 = BitVector(hexstring=str2Prime)
+                        bv3 = bv1.gf_multiply_modular(bv2, AES_modulus, 8)
+                        sum = sum ^ bv3.int_val()
+                        # print(row,col,hex(bv1.int_val()),hex(bv2.int_val()),hex(bv3.int_val()))
+                    # print(row,col,hex(sum))
+                    t.append(sum)
+                newMatrix.append(t)
+            # print('hey')
+            # print(matrixHexPrint(newMatrix))
+            stateMatrix = newMatrix
+        # print('after mix columns round',round+1)
+        # matrixHexPrint(stateMatrix)
+
+        addRoundKey(stateMatrix,roundKeys[round+1])
+        # print('after roundkey round',round+1)
+        # matrixHexPrint(stateMatrix)
+    return stateMatrix
+
+def decrypttion16Char(stateMatrix,roundKeys):
+    n = len(stateMatrix)
+    addRoundKey(stateMatrix,roundKeys[-1])
+
+
+    for round in range(10):#range(10,0,-1):
+        
+            # print(hexPrint(stateMatrix[i]))
+
+        
+            # print(hexPrint(stateMatrix[i]))
+        # matrixHexPrint(stateMatrix)   
+        # for row in stateMatrix:
+        #     print(hexPrint(row))
+        # print('before inverse row shift')
+        # matrixHexPrint(stateMatrix)
+        for i in range(n):
+            w = stateMatrix[i]
+            # print(i)
+            # print(hexPrint(stateMatrix[i]))
+            for k in range(i):
+                
+                t = w[n-1]
+                for j in range(n-1,-1,-1):
+                    w[j] = w[((j-1))]
+                w[0] = t
+        # print('after inverse shift row')
+        # matrixHexPrint(stateMatrix)
+        for i in range(n):
+            stateMatrix[i] = invSboxSub(stateMatrix[i])
+        # print('after invsbox')
+        # matrixHexPrint(stateMatrix)
+
+        addRoundKey(stateMatrix,roundKeys[-2-round])
+
+        # print('after add round key')
+        # matrixHexPrint(stateMatrix)
+
+        if round+1 != 10:
+            newMatrix = []
+            for row in range(n):
+                t = []
+                for col in range(n):
+                    sum = 0
+                    for i in range(n):
+                        bv1 = InvMixer[row][i]
+                        num2 = stateMatrix[i][col]
+                        # print(type(num1))
+                        # print(type(num2))
+                        str2 = hex(num2)
+                        str2Prime = ""
+                        for j in range(len(str2)-2):
+                            str2Prime += str2[j+2]
+                        AES_modulus = BitVector(bitstring='100011011')
+                        bv2 = BitVector(hexstring=str2Prime)
+                        bv3 = bv1.gf_multiply_modular(bv2, AES_modulus, 8)
+                        sum = sum ^ bv3.int_val()
+                        # print(row,col,hex(bv1.int_val()),hex(bv2.int_val()),hex(bv3.int_val()))
+                    # print(row,col,hex(sum))
+                    t.append(sum)
+                newMatrix.append(t)
+            # print('hey')
+            # print(matrixHexPrint(newMatrix))
+            stateMatrix = newMatrix
+        # print('after invmix columns round',round+1)
+        # matrixHexPrint(stateMatrix)
+
+        
+        # print('after roundkey round',round+1)
+        # matrixHexPrint(stateMatrix)
+    return stateMatrix
+
+def stringTest():
+    inputString = "Thats my Kung Fu"
+    plainText = "Two One Nine Two"
+
+    if(len(inputString)<16):
+        i = len(inputString)
+        while(i!=16):
+            inputString = inputString + " "
+            i += 1
+    elif(len(inputString)>16):
+        newString = ""
+        i = 0
+        while(i!=16):
+            newString += inputString[i]
+            i += 1
+        inputString = newString
+
+
+
+    keyMatrix = stringToAsciiMatrix16CharRowMajor(inputString)
+
+    roundKeys = roundKeyGeneration(keyMatrix)
+
+
+
+        
+    stateMatrix = stringToAsciiMatrix16CharColumnMajor(plainText)
+
+
+    stateMatrix = encryption16Char(stateMatrix,roundKeys)
+
+
+    stateMatrix = decrypttion16Char(stateMatrix,roundKeys)
+
+
+    matrixHexPrint(stateMatrix)
+
+def fileTest():
+    print('under construction!')
+
+
+try:
+    choice = int(input('press 1 for string encryption 2 for file encryption: '))
+    if choice == 1:
+        stringTest()
+    elif choice == 2:
+        fileTest()
+    else:
+        print('invalid input hence closing the program. restart to try again!')
+except:
+    print('invalid input hence closing the program. restart to try again!')
     
-        # print(hexPrint(stateMatrix[i]))
 
-    
-        # print(hexPrint(stateMatrix[i]))
-    # matrixHexPrint(stateMatrix)   
-    # for row in stateMatrix:
-    #     print(hexPrint(row))
-    print('before inverse row shift')
-    matrixHexPrint(stateMatrix)
-    for i in range(n):
-        w = stateMatrix[i]
-        # print(i)
-        # print(hexPrint(stateMatrix[i]))
-        for k in range(i):
-            
-            t = w[n-1]
-            for j in range(n-1,-1,-1):
-                w[j] = w[((j-1))]
-            w[0] = t
-    print('after inverse shift row')
-    matrixHexPrint(stateMatrix)
-    for i in range(n):
-        stateMatrix[i] = invSboxSub(stateMatrix[i])
-    print('after invsbox')
-    matrixHexPrint(stateMatrix)
+# inputString = input("Please insert encryption key(128bit 16byte):")
+# print(inputString)
 
-    addRoundKey(stateMatrix,roundKeys[-2-round])
-
-    print('after add round key')
-    matrixHexPrint(stateMatrix)
-
-    if round+1 != 10:
-        newMatrix = []
-        for row in range(n):
-            t = []
-            for col in range(n):
-                sum = 0
-                for i in range(n):
-                    bv1 = InvMixer[row][i]
-                    num2 = stateMatrix[i][col]
-                    # print(type(num1))
-                    # print(type(num2))
-                    str2 = hex(num2)
-                    str2Prime = ""
-                    for j in range(len(str2)-2):
-                        str2Prime += str2[j+2]
-                    AES_modulus = BitVector(bitstring='100011011')
-                    bv2 = BitVector(hexstring=str2Prime)
-                    bv3 = bv1.gf_multiply_modular(bv2, AES_modulus, 8)
-                    sum = sum ^ bv3.int_val()
-                    # print(row,col,hex(bv1.int_val()),hex(bv2.int_val()),hex(bv3.int_val()))
-                # print(row,col,hex(sum))
-                t.append(sum)
-            newMatrix.append(t)
-        # print('hey')
-        # print(matrixHexPrint(newMatrix))
-        stateMatrix = newMatrix
-    print('after invmix columns round',round+1)
-    matrixHexPrint(stateMatrix)
-
-    
-    # print('after roundkey round',round+1)
-    # matrixHexPrint(stateMatrix)
 
 
