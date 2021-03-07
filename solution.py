@@ -1,6 +1,7 @@
 from BitVector import *
 import math
 import timeit
+import time
 Sbox = (
     0x63, 0x7C, 0x77, 0x7B, 0xF2, 0x6B, 0x6F, 0xC5, 0x30, 0x01, 0x67, 0x2B, 0xFE, 0xD7, 0xAB, 0x76,
     0xCA, 0x82, 0xC9, 0x7D, 0xFA, 0x59, 0x47, 0xF0, 0xAD, 0xD4, 0xA2, 0xAF, 0x9C, 0xA4, 0x72, 0xC0,
@@ -405,13 +406,7 @@ def matrixToStringColumnMajor(matrix):
             retString += chr(matrix[j][i])
     return retString
 
-def stringTest():
-    # inputString = "Thats my Kung Fu"
-    # plainText = "Two One Nine Two"
-    inputString = input('please enter encryption key:\n')
-    plainText = input('please input plaintext to encrypt:\n')
-
-
+def keyStringSlice(inputString):
     if(len(inputString)<16):
         i = len(inputString)
         while(i!=16):
@@ -424,6 +419,22 @@ def stringTest():
             newString += inputString[i]
             i += 1
         inputString = newString
+    return inputString
+
+def intListToString(intList):
+    retString = ""
+    for entry in intList:
+        retString += chr(entry)
+    return retString
+
+def stringTest():
+    # inputString = "Thats my Kung Fu"
+    # plainText = "Two One Nine Two"
+    inputString = input('please enter encryption key:\n')
+    plainText = input('please input plaintext to encrypt:\n')
+
+
+    inputString = keyStringSlice(inputString)
 
 
 
@@ -527,8 +538,116 @@ def stringTest():
 
     # matrixHexPrint(stateMatrix)
 
-def fileTest():
-    print('under construction!')
+def encryptFile(): 
+    keyString = input('please enter encryption key:\n')
+    keyString = keyStringSlice(keyString)
+
+    inputFileName = input('please enter input file name:\n')
+    currentTime = int(time.time())
+    outputFileName = "ENC"+str(currentTime)+inputFileName
+    
+    keyMatrix = stringToAsciiMatrix16CharRowMajor(keyString)
+    roundKeys = roundKeyGeneration(keyMatrix)
+    
+    
+    # print(int(time.time()))
+    # print(timeit.default_timer())
+    with open(inputFileName, "rb") as f:
+        # byte = f.read(1)
+        # while byte != b"":
+        #     t= int.from_bytes(byte, byteorder='big')
+        #     print(t,byte)
+        #     c += 1
+        #     # print(byte)
+        #     byte = f.read(1)
+        bytes = f.read(16)
+        while len(bytes)>0 :
+            # print(len(bytes))
+            intForm16 = [ord(' ')]*16 #appending 16 space
+            # print(len(intForm16))
+            # print(type(bytes[0]))
+            # print(bytes[0])
+            for i in range(len(bytes)):
+                intForm16[i] = bytes[i]
+            
+            plainText = intListToString(intForm16)
+            stateMatrix = stringToAsciiMatrix16CharColumnMajor(plainText)
+            stateMatrix = encryption16Char(stateMatrix,roundKeys)
+            outText = matrixToStringColumnMajor(stateMatrix)
+            
+            if(len(bytes) != len(outText)):
+                temString = ""
+                for i in range(len(bytes)):
+                    temString += outText[i]
+                outText = temString
+
+            outputFile = open(outputFileName,"at")
+            outputFile.write(outText)
+            # print(plainText)
+            
+            bytes = f.read(16)
+        
+    
+    # print('under construction!')
+
+def decryptFile():
+    keyString = input('please enter encryption key:\n')
+    keyString = keyStringSlice(keyString)
+
+    inputFileName = input('please enter input file name:\n')
+    currentTime = int(time.time())
+    outputFileName = "DEC"+str(currentTime)+inputFileName
+    
+    keyMatrix = stringToAsciiMatrix16CharRowMajor(keyString)
+    roundKeys = roundKeyGeneration(keyMatrix)
+    
+    
+    # print(int(time.time()))
+    # print(timeit.default_timer())
+    with open(inputFileName, "rb") as f:
+        # byte = f.read(1)
+        # while byte != b"":
+        #     t= int.from_bytes(byte, byteorder='big')
+        #     print(t,byte)
+        #     c += 1
+        #     # print(byte)
+        #     byte = f.read(1)
+        bytes = f.read(16)
+        while len(bytes)>0 :
+            # print(len(bytes))
+            intForm16 = [ord(' ')]*16 #appending 16 spaces
+            # print(len(intForm16))
+            # print(type(bytes[0]))
+            # print(bytes[0])
+            for i in range(len(bytes)):
+                intForm16[i] = bytes[i]
+            
+            plainText = intListToString(intForm16)
+            stateMatrix = stringToAsciiMatrix16CharColumnMajor(plainText)
+            stateMatrix = decrypttion16Char(stateMatrix,roundKeys)
+            outText = matrixToStringColumnMajor(stateMatrix)
+            
+            if(len(bytes) != len(outText)):
+                temString = ""
+                for i in range(len(bytes)):
+                    temString += outText[i]
+                outText = temString
+
+            outputFile = open(outputFileName,"ab")
+            outputFile.write(bytearray(outText, 'utf-8'))
+            # print(plainText)
+            
+            bytes = f.read(16)
+        
+    
+    # print('under construction!')
+
+f = open('ENC1615129753tempClipBoard2','rb')
+bytes = f.read(16)
+while(len(bytes)>0):
+    print(len(bytes))
+    bytes = f.read(16)
+
 
 choice = -5
 try:
@@ -538,7 +657,11 @@ except:
 if choice == 1:
     stringTest()
 elif choice == 2:
-    fileTest()
+    choice = (input('press 1 for encrypting file anything else for decrypting file'))
+    if(choice == "1"):
+        encryptFile()
+    else:
+        decryptFile()
 else:
     print('invalid input hence closing the program. restart to try again!\n')
 
