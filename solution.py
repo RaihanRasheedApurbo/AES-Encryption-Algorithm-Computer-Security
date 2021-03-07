@@ -1,5 +1,6 @@
 from BitVector import *
-
+import math
+import timeit
 Sbox = (
     0x63, 0x7C, 0x77, 0x7B, 0xF2, 0x6B, 0x6F, 0xC5, 0x30, 0x01, 0x67, 0x2B, 0xFE, 0xD7, 0xAB, 0x76,
     0xCA, 0x82, 0xC9, 0x7D, 0xFA, 0x59, 0x47, 0xF0, 0xAD, 0xD4, 0xA2, 0xAF, 0x9C, 0xA4, 0x72, 0xC0,
@@ -378,9 +379,38 @@ def decrypttion16Char(stateMatrix,roundKeys):
         # matrixHexPrint(stateMatrix)
     return stateMatrix
 
+def stringToASCII(inputString):
+    retString = ""
+    for c in inputString:
+        tempString = hex(ord(c))
+        for i in range(len(tempString)-2):
+            retString += tempString[2+i]
+        retString += " "
+    return retString
+
+def matrixToHexStringColumnMajor(matrix):
+    retString = ""
+    for i in range(len(matrix[0])):
+        for j in range(len(matrix)):
+            tempString = hex(matrix[j][i])
+            for k in range(len(tempString)-2):
+                retString += tempString[2+k]
+            retString += " "
+    return retString
+
+def matrixToStringColumnMajor(matrix):
+    retString = ""
+    for i in range(len(matrix[0])):
+        for j in range(len(matrix)):
+            retString += chr(matrix[j][i])
+    return retString
+
 def stringTest():
-    inputString = "Thats my Kung Fu"
-    plainText = "Two One Nine Two"
+    # inputString = "Thats my Kung Fu"
+    # plainText = "Two One Nine Two"
+    inputString = input('please enter encryption key:\n')
+    plainText = input('please input plaintext to encrypt:\n')
+
 
     if(len(inputString)<16):
         i = len(inputString)
@@ -397,38 +427,121 @@ def stringTest():
 
 
 
+    
+
+    print('Key:')
+    print(inputString,'[In ASCII]')
+    print(stringToASCII(inputString),'[In HEX]')
+    print()
+    print('Plain Text:')
+    print(plainText,'[In ASCII]')
+    print(stringToASCII(plainText),'[In HEX]')
+
+    time5 = timeit.default_timer()
     keyMatrix = stringToAsciiMatrix16CharRowMajor(inputString)
-
     roundKeys = roundKeyGeneration(keyMatrix)
+    time6 = timeit.default_timer()
+
+    totalIterationNeeded = len(plainText)/len(inputString)
+
+    # print(totalIterationNeeded)
+
+    totalIterationNeeded = math.ceil(totalIterationNeeded)
+    
+    # print(totalIterationNeeded)
+
+    fullText = plainText
+    incryptedMatrcies = [] # store matrix of each round
+
+    
 
 
 
+    time1 = timeit.default_timer()
+
+    for i in range(totalIterationNeeded):
+        plainText = ""
+        for position in range(16):
+            index = i*16+position
+            if index < len(fullText):
+                plainText += fullText[index]
+            else:
+                plainText += " "
         
-    stateMatrix = stringToAsciiMatrix16CharColumnMajor(plainText)
+        
+        stateMatrix = stringToAsciiMatrix16CharColumnMajor(plainText)
+        stateMatrix = encryption16Char(stateMatrix,roundKeys)
+
+        incryptedMatrcies.append(stateMatrix)
+    
+    time2 = timeit.default_timer()
+    
+    cipheredHex = ""
+    for matrix in incryptedMatrcies:
+        cipheredHex += matrixToHexStringColumnMajor(matrix)
+    
+    cipheredText = ""
+    for matrix in incryptedMatrcies:
+        cipheredText += matrixToStringColumnMajor(matrix)
+     
+    
+
+    print('Cipher Text:')
+    print(cipheredHex,'[In HEX]')
+    print(cipheredText,'[In ASCII]')
+
+    time3 = timeit.default_timer()
+    decryptedMatrcies = []
+    for matrix in incryptedMatrcies:
+        stateMatrix = decrypttion16Char(matrix,roundKeys)
+        decryptedMatrcies.append(stateMatrix)
+    time4 = timeit.default_timer()
+
+    decipheredHex = ""
+    for matrix in decryptedMatrcies:
+        decipheredHex += matrixToHexStringColumnMajor(matrix)
+    
+    decipheredText = ""
+    for matrix in decryptedMatrcies:
+        decipheredText += matrixToStringColumnMajor(matrix)
+     
+    
+
+    print('Decipher Text:')
+    print(decipheredHex,'[In HEX]')
+    print(decipheredText,'[In ASCII]')
+    
+    print()
+    print('Execution Time')
+    print('Key Scheduling:',time6-time5)
+    print('Encryption Time:',time2-time1)
+    print('Decryption Time:',time4-time3)
+    
+
+    # stateMatrix = decrypttion16Char(stateMatrix,roundKeys)
+
+    # print('Deciphered Text:')
+    # print(matrixToHexStringColumnMajor(stateMatrix),'[In HEX]')
+    # print(matrixToStringColumnMajor(stateMatrix),'[In ASCII]')
 
 
-    stateMatrix = encryption16Char(stateMatrix,roundKeys)
-
-
-    stateMatrix = decrypttion16Char(stateMatrix,roundKeys)
-
-
-    matrixHexPrint(stateMatrix)
+    # matrixHexPrint(stateMatrix)
 
 def fileTest():
     print('under construction!')
 
-
+choice = -5
 try:
-    choice = int(input('press 1 for string encryption 2 for file encryption: '))
-    if choice == 1:
-        stringTest()
-    elif choice == 2:
-        fileTest()
-    else:
-        print('invalid input hence closing the program. restart to try again!')
+    choice = int(input('press 1 for string encryption 2 for file encryption:\n'))
 except:
-    print('invalid input hence closing the program. restart to try again!')
+    choice = -5
+if choice == 1:
+    stringTest()
+elif choice == 2:
+    fileTest()
+else:
+    print('invalid input hence closing the program. restart to try again!\n')
+
     
 
 # inputString = input("Please insert encryption key(128bit 16byte):")
