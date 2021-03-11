@@ -600,16 +600,16 @@ def encryptFile():
     f.close()
     outputFile.close()
     
-    outputFile2 = open("EN"+str(currentTime),"ab")
-    outputFile2.write(bytearray(str(bytesRead)+"\n","UTF-8"))
-    outputFile = open(outputFileName,"rb")
-    stringChunk = outputFile.read(100)
-    count = 0
-    while(len(stringChunk)>0):
-        count += len(stringChunk)
-        outputFile2.write(stringChunk)
-        stringChunk = outputFile.read(100)
-    print(count)
+    # outputFile2 = open("EN"+str(currentTime),"ab")
+    # outputFile2.write(bytearray(str(bytesRead)+"\n","UTF-8"))
+    # outputFile = open(outputFileName,"rb")
+    # stringChunk = outputFile.read(100)
+    # count = 0
+    # while(len(stringChunk)>0):
+    #     count += len(stringChunk)
+    #     outputFile2.write(stringChunk)
+    #     stringChunk = outputFile.read(100)
+    # print(count)
 
 
         
@@ -634,14 +634,14 @@ def decryptFile():
     
     f = open(inputFileName, "rb")
     outputFile = open(outputFileName,"ab")
-    bytesToBeRead = 0
-    if firstLine:
-        bytesToBeRead = int(f.readline())
+    # bytesToBeRead = 0
+    # if firstLine:
+    #     bytesToBeRead = int(f.readline())
     
-    readSoFar = 0
+    # readSoFar = 0
     bytes = f.read(16)
     while len(bytes)>0 :
-        readSoFar += len(bytes)
+        # readSoFar += len(bytes)
         # print(len(bytes))
         intForm16 = [ord(' ')]*16 #appending 16 spaces
         # print(len(intForm16))
@@ -656,12 +656,12 @@ def decryptFile():
         stateMatrix = decrypttion16Char(stateMatrix,roundKeys)
         outList = list2DColumnMajorToList1D(stateMatrix)
         
-        if readSoFar>bytesToBeRead:
-            dif = readSoFar - bytesToBeRead
-            tempText = []
-            for i in range(len(outList)-dif):
-                tempText.append(outList[i]) 
-            outList = tempText
+        # if readSoFar>bytesToBeRead:
+        #     dif = readSoFar - bytesToBeRead
+        #     tempText = []
+        #     for i in range(len(outList)-dif):
+        #         tempText.append(outList[i]) 
+        #     outList = tempText
 
         
         outputFile.write(bytearray(outList))
