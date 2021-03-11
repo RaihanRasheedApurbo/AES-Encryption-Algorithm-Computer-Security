@@ -622,7 +622,7 @@ def decryptFile():
 
     inputFileName = input('please enter input file name:\n')
     currentTime = int(time.time())
-    outputFileName = "DEC"+str(currentTime)+inputFileName
+    outputFileName = "D"+str(currentTime)+inputFileName
     
     keyMatrix = stringToAsciiMatrix16CharRowMajor(keyString)
     roundKeys = roundKeyGeneration(keyMatrix)
@@ -631,48 +631,45 @@ def decryptFile():
     # print(int(time.time()))
     # print(timeit.default_timer())
     firstLine = True
-    with open(inputFileName, "rt") as f:
-        # byte = f.read(1)
-        # while byte != b"":
-        #     t= int.from_bytes(byte, byteorder='big')
-        #     print(t,byte)
-        #     c += 1
-        #     # print(byte)
-        #     byte = f.read(1)
-        bytesToBeRead = 0
-        if firstLine:
-            bytesToBeRead = int(f.readline())
+    
+    f = open(inputFileName, "rb")
+    outputFile = open(outputFileName,"ab")
+    bytesToBeRead = 0
+    if firstLine:
+        bytesToBeRead = int(f.readline())
+    
+    readSoFar = 0
+    bytes = f.read(16)
+    while len(bytes)>0 :
+        readSoFar += len(bytes)
+        # print(len(bytes))
+        intForm16 = [ord(' ')]*16 #appending 16 spaces
+        # print(len(intForm16))
+        # print(type(bytes[0]))
+        # print(bytes[0])
+        for i in range(len(bytes)):
+            intForm16[i] = (bytes[i])
         
-        readSoFar = 0
-        bytes = f.read(16)
-        while len(bytes)>0 :
-            readSoFar += len(bytes)
-            # print(len(bytes))
-            intForm16 = [ord(' ')]*16 #appending 16 spaces
-            # print(len(intForm16))
-            # print(type(bytes[0]))
-            # print(bytes[0])
-            for i in range(len(bytes)):
-                intForm16[i] = ord(bytes[i])
-            
-            plainText = intListToString(intForm16)
-            stateMatrix = stringToAsciiMatrix16CharColumnMajor(plainText)
-            stateMatrix = decrypttion16Char(stateMatrix,roundKeys)
-            outText = matrixToStringColumnMajor(stateMatrix)
-            
-            if readSoFar>bytesToBeRead:
-                dif = readSoFar - bytesToBeRead
-                tempText = ""
-                for i in range(len(outText)-dif):
-                    tempText += outText[i]
-                outText = tempText
 
-            outputFile = open(outputFileName,"ab")
-            outputFile.write(bytearray(outText, 'utf-8'))
-            # print(plainText)
-            
-            bytes = f.read(16)
+
+        stateMatrix = list1DToList2DColumnMajor(intForm16)
+        stateMatrix = decrypttion16Char(stateMatrix,roundKeys)
+        outList = list2DColumnMajorToList1D(stateMatrix)
         
+        if readSoFar>bytesToBeRead:
+            dif = readSoFar - bytesToBeRead
+            tempText = []
+            for i in range(len(outList)-dif):
+                tempText.append(outList[i]) 
+            outList = tempText
+
+        
+        outputFile.write(bytearray(outList))
+        # print(plainText)
+        
+        bytes = f.read(16)
+    f.close()
+    outputFile.close()   
     
     # print('under construction!')
 
