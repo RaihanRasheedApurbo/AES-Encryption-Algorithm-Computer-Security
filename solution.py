@@ -538,13 +538,30 @@ def stringTest():
 
     # matrixHexPrint(stateMatrix)
 
+def list1DToList2DColumnMajor(myList):
+    list2D = []
+    length = int(math.sqrt(len(myList)))
+    for i in range(length):
+        list2D.append([0]*length)
+    for i in range(length):
+        for j in range(length):
+            list2D[j][i] = myList[i*length+j]
+    return list2D
+
+def list2DColumnMajorToList1D(myList2D):
+    retList = []
+    for i in range(len(myList2D[0])):
+        for j in range(len(myList2D)):
+             retList.append(myList2D[j][i])
+    return retList
+
 def encryptFile(): 
     keyString = input('please enter encryption key:\n')
     keyString = keyStringSlice(keyString)
 
     inputFileName = input('please enter input file name:\n')
     currentTime = int(time.time())
-    outputFileName = "ENC"+str(currentTime)
+    outputFileName = "E"+str(currentTime)
     
     keyMatrix = stringToAsciiMatrix16CharRowMajor(keyString)
     roundKeys = roundKeyGeneration(keyMatrix)
@@ -553,42 +570,39 @@ def encryptFile():
     # print(int(time.time()))
     # print(timeit.default_timer())
     bytesRead = 0
-    with open(inputFileName, "rb") as f:
-        # byte = f.read(1)
-        # while byte != b"":
-        #     t= int.from_bytes(byte, byteorder='big')
-        #     print(t,byte)
-        #     c += 1
-        #     # print(byte)
-        #     byte = f.read(1)
+    f = open(inputFileName, "rb")
+    outputFile = open(outputFileName,"ab")
+    bytes = f.read(16)
+    while len(bytes)>0 :
+        # print(len(bytes))
+        bytesRead += len(bytes)
+        intForm16 = [ord(' ')]*16 #appending 16 space
+        # print(len(intForm16))
+        # print(type(bytes[0]))
+        # print(bytes[0])
+        for i in range(len(bytes)):
+            intForm16[i] = bytes[i]
+        
+        # plainText = intListToString(intForm16)
+        # stateMatrix = stringToAsciiMatrix16CharColumnMajor(plainText)
+        stateMatrix = list1DToList2DColumnMajor(intForm16)
+        stateMatrix = encryption16Char(stateMatrix,roundKeys)
+        # outText = matrixToStringColumnMajor(stateMatrix)
+        outList = list2DColumnMajorToList1D(stateMatrix)
+        
+
+        
+        outputFile.write(bytearray(outList))
+        # print(plainText)
+        
         bytes = f.read(16)
-        while len(bytes)>0 :
-            # print(len(bytes))
-            bytesRead += len(bytes)
-            intForm16 = [ord(' ')]*16 #appending 16 space
-            # print(len(intForm16))
-            # print(type(bytes[0]))
-            # print(bytes[0])
-            for i in range(len(bytes)):
-                intForm16[i] = bytes[i]
-            
-            plainText = intListToString(intForm16)
-            stateMatrix = stringToAsciiMatrix16CharColumnMajor(plainText)
-            stateMatrix = encryption16Char(stateMatrix,roundKeys)
-            outText = matrixToStringColumnMajor(stateMatrix)
-            
-            
-
-            outputFile = open(outputFileName,"at")
-            outputFile.write(outText)
-            # print(plainText)
-            
-            bytes = f.read(16)
-
     
-    outputFile2 = open("ENC1"+str(currentTime),"at")
-    outputFile2.write(str(bytesRead)+"\n")
-    outputFile = open(outputFileName,"rt")
+    f.close()
+    outputFile.close()
+    
+    outputFile2 = open("EN"+str(currentTime),"ab")
+    outputFile2.write(bytearray(str(bytesRead)+"\n","UTF-8"))
+    outputFile = open(outputFileName,"rb")
     stringChunk = outputFile.read(100)
     count = 0
     while(len(stringChunk)>0):
@@ -662,17 +676,13 @@ def decryptFile():
     
     # print('under construction!')
 
-# f = open('ENC11615139057','rt')
-# print('hi')
-# print(int(f.readline()))
-# print('hi')
-# bytes = f.read(16)
-# while(len(bytes)>0):
+# f = open('reference','rb')
+# bytes = f.readline()
+# print(type(bytes),type(bytes[0]),bytes[0],bytes.decode("utf-8"))
+# print(bytes)
+# bytes = f.read(100)
+# print(type(bytes),type(bytes[0]),bytes[0],chr(bytes[0]))
 
-#     print(len(bytes))
-#     print(bytes)
-#     bytes = f.read(16)
-# print('hey')
 
 choice = -5
 try:
